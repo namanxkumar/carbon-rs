@@ -1,56 +1,48 @@
-use carbon_rs::{
-    component::Component,
-    core::components::{Point, Quaternion, Transform, Vector3},
-    core::resources::Timestamp,
-    core::Core,
-    entity::Entity,
-};
+use bevy_ecs::prelude::*;
+use carbon_rs::components::{LIDARBundle, PointCloud, Port, Transform, LIDAR};
+use carbon_rs::primitives::Point;
+use carbon_rs::traits::PortReader;
 
-#[derive(EntityTemplate)]
-struct LidarEntity {
-    lidar: Lidar,
-    point_cloud: PointCloud,
-    transform: Transform,
-}
-
-#[derive(Component)]
-struct Lidar {
-    lidar_type: String,
-    port: String,
-    max_distance: f32,
-}
-
-#[derive(Component)]
-struct PointCloud {
-    points: Vec<Point>,
-}
-
-fn read_lidar_data(core: &Core, query: Query<LidarEntity>) {
-    let timestamp: Timestamp = core.resources.get::<Timestamp>().unwrap();
-
-    for lidar_entity in query.iter() {
-        // Do something with the data, update pointcloud
+fn read_lidar_data(mut query: Query<(&LIDAR, &Transform, &mut PointCloud)>) {
+    // For each LIDAR entity
+    for (lidar, transform, mut point_cloud) in query.iter_mut() {
+        if let Some(data) = lidar.read_data() {
+            let points = data
+                .iter()
+                .map(|point| Point {
+                    position: transform.position + point.position,
+                    intensity: point.intensity,
+                })
+                .collect();
+            point_cloud.points = points;
+        }
     }
 }
 
 fn main() {
-    let lidar = LidarEntity {
-        lidar: Lidar {
-            lidar_type: "Velodyne".to_string(),
-            port: "/dev/ttyUSB0".to_string(),
-            max_distance: 100.0,
-        },
+    let mut world = World::new();
+
+    world.spawn(LIDARBundle {
+        lidar: LIDAR::RPLIDAR,
         transform: Transform {
-            position: Vector3::new(0.0, 0.0, 0.0),
-            rotation: Quaternion::new(0.0, 0.0, 0.0, 1.0),
+            ..Default::default()
         },
-        ..Default::default()
-    };
+        port: Port("COM1".to_string()),
+        point_cloud: PointCloud { points: Vec::new() },
+    });
 
-    let core = Core::new()
-        .enable_recording() // Record a replayable bag style file
-        .add_entity(lidar)
-        .add_system(read_lidar_data);
+    // Print entities and components
+    println!("Entities:");
+    for entity in world.iter_entities() {
+        println!("Entity: {:#?}", entity.id());
+        for component in world.inspect_entity(entity.id()) {
+            println!("Component: {:#?}", component);
+        }
+    }
 
-    core.run();
+    let mut schedule = Schedule::default();
+
+    schedule.add_systems(read_lidar_data);
+
+    schedule.run(&mut world);
 }

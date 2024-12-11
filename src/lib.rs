@@ -1,3 +1,3 @@
-pub mod component;
-pub mod core;
-pub mod entity;
+pub mod components;
+pub mod primitives;
+pub mod traits;
