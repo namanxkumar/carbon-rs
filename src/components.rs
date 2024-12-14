@@ -1,5 +1,5 @@
 use crate::primitives::{Point, Quaternion, Vector3};
-use crate::traits::PortReader;
+use crate::traits::{MotorController, PortReader, LIDAR};
 use bevy_ecs::prelude::*;
 
 // COMPONENTS for LIDAR data
@@ -45,32 +45,69 @@ pub struct PointCloud {
 pub struct Port(pub String);
 
 #[derive(Component)]
-pub enum LIDAR {
-    RPLIDAR,
-    VLP16,
-}
+pub struct RPLIDAR;
 
-impl PortReader for LIDAR {
+impl PortReader for RPLIDAR {
     type Output = Vec<Point>;
 
     fn read_data(&self) -> Option<Self::Output> {
-        match self {
-            LIDAR::RPLIDAR => {
-                // Read raw data from RPLIDAR
-                Some(Vec::new())
-            }
-            LIDAR::VLP16 => {
-                // Read raw data from VLP16
-                Some(Vec::new())
-            }
-        }
+        // Read raw data from RPLIDAR
+        Some(Vec::new())
     }
 }
 
+impl LIDAR for RPLIDAR {}
+
 #[derive(Bundle)]
-pub struct LIDARBundle {
-    pub lidar: LIDAR,
+pub struct LIDARBundle<T: LIDAR + Component> {
+    pub lidar: T,
     pub transform: Transform,
     pub port: Port,
     pub point_cloud: PointCloud,
 }
+
+#[derive(Component)]
+pub struct Kangaroo;
+
+impl PortReader for Kangaroo {
+    type Output = f32;
+
+    fn read_data(&self) -> Option<Self::Output> {
+        // TODO: Read raw data from Kangaroo
+        Some(0.0)
+    }
+}
+
+impl MotorController for Kangaroo {
+    fn send_motor_commands(&self) {}
+}
+
+#[derive(Component)]
+pub enum Motor {
+    Dynamixel,
+}
+
+#[derive(Component)]
+pub struct EncoderFeedback {
+    pub left_position: Option<f32>,
+    pub right_position: Option<f32>,
+    pub left_velocity: Option<f32>,
+    pub right_velocity: Option<f32>,
+}
+
+#[derive(Component)]
+pub struct DifferentialDriveCommand {
+    pub left_velocity: f32,
+    pub right_velocity: f32,
+}
+
+#[derive(Bundle)]
+pub struct DifferentialDriveBundle<T: MotorController + Component> {
+    pub motor_controller: T,
+    pub motor: Motor,
+    pub encoder_feedback: EncoderFeedback,
+    pub differential_drive_command: DifferentialDriveCommand,
+}
+
+//TODO!> HOW TO IMPLEMENT TRANSFORMS FOR EACH WHEEL and connect to the feedback
+//TODO!> HOW TO IMPLEMENT LINKS BETWEEN TRANSFORMS

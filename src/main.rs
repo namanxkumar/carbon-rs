@@ -1,31 +1,13 @@
 use bevy_ecs::prelude::*;
-use carbon_rs::components::{LIDARBundle, PointCloud, Port, Transform, LIDAR};
-use carbon_rs::primitives::Point;
+use carbon_rs::components::{LIDARBundle, PointCloud, Port, Transform, RPLIDAR};
 use carbon_rs::resources::{BaseTransform, Timestamp};
-use carbon_rs::traits::PortReader;
-
-fn read_lidar_data(mut query: Query<(&LIDAR, &Transform, &mut PointCloud)>) {
-    // For each LIDAR entity
-    for (lidar, transform, mut point_cloud) in query.iter_mut() {
-        if let Some(data) = lidar.read_data() {
-            let points = data
-                .iter()
-                .map(|point| Point {
-                    position: transform.apply(point.position),
-                    intensity: point.intensity,
-                })
-                .collect();
-            point_cloud.points = points;
-            println!("Read LIDAR data");
-        }
-    }
-}
+use carbon_rs::systems::read_lidar_data;
 
 fn main() {
     let mut world = World::new();
 
     world.spawn(LIDARBundle {
-        lidar: LIDAR::RPLIDAR,
+        lidar: RPLIDAR,
         transform: Transform {
             ..Default::default()
         },
@@ -48,7 +30,7 @@ fn main() {
 
     let mut schedule = Schedule::default();
 
-    schedule.add_systems(read_lidar_data);
+    schedule.add_systems(read_lidar_data::<RPLIDAR>);
 
     loop {
         schedule.run(&mut world);
