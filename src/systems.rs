@@ -1,4 +1,7 @@
-use crate::components::{DifferentialDriveCommand, EncoderFeedback, Motor, PointCloud, Transform};
+use crate::components::{
+    CommandVelocity, EncoderFeedback, LeftDifferentialDrive, PointCloud, RightDifferentialDrive,
+    Transform,
+};
 use crate::primitives::Point;
 use crate::traits::{MotorController, LIDAR};
 use bevy_ecs::prelude::*;
@@ -21,13 +24,15 @@ pub fn read_lidar_data<T: LIDAR + Component>(mut query: Query<(&T, &Transform, &
 }
 
 pub fn read_wheel_encoder_data_via_controller<T: MotorController + Component>(
-    mut query: Query<(&T, &Motor, &mut EncoderFeedback)>,
+    mut left_wheel_query: Query<(&T, &mut EncoderFeedback), With<LeftDifferentialDrive>>,
+    mut right_wheel_query: Query<(&T, &mut EncoderFeedback), With<RightDifferentialDrive>>,
 ) {
     todo!("Read wheel encoder data");
 }
 
 pub fn send_motor_commands_via_controller<T: MotorController + Component>(
-    query: Query<(&T, &Motor, &DifferentialDriveCommand)>,
+    left_wheel_query: Query<(&T, &CommandVelocity), With<LeftDifferentialDrive>>,
+    right_wheel_query: Query<(&T, &CommandVelocity), With<RightDifferentialDrive>>,
 ) {
     todo!("Send motor commands");
 }

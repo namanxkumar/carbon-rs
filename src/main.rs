@@ -1,11 +1,15 @@
 use bevy_ecs::prelude::*;
-use carbon_rs::components::{LIDARBundle, PointCloud, Port, Transform, RPLIDAR};
+use carbon_rs::components::{
+    CommandVelocity, EncoderFeedback, Kangaroo, LIDARBundle, LeftDifferentialDrive, PointCloud,
+    Port, RightDifferentialDrive, Transform, Wheel, WheelBundle, RPLIDAR,
+};
 use carbon_rs::resources::{BaseTransform, Timestamp};
 use carbon_rs::systems::read_lidar_data;
 
 fn main() {
     let mut world = World::new();
 
+    // Spawn LIDAR
     world.spawn(LIDARBundle {
         lidar: RPLIDAR,
         transform: Transform {
@@ -14,6 +18,38 @@ fn main() {
         port: Port("COM1".to_string()),
         point_cloud: PointCloud { points: Vec::new() },
     });
+
+    // Spawn Kangaroo
+    world.spawn(Kangaroo);
+
+    // Spawn Wheels
+    world.spawn((
+        WheelBundle {
+            wheel: Wheel { radius: 0.1 },
+            encoder_feedback: EncoderFeedback {
+                ..Default::default()
+            },
+            transform: Transform {
+                ..Default::default()
+            },
+        },
+        LeftDifferentialDrive,
+        CommandVelocity(0.0),
+    ));
+
+    world.spawn((
+        WheelBundle {
+            wheel: Wheel { radius: 0.1 },
+            encoder_feedback: EncoderFeedback {
+                ..Default::default()
+            },
+            transform: Transform {
+                ..Default::default()
+            },
+        },
+        RightDifferentialDrive,
+        CommandVelocity(0.0),
+    ));
 
     world.insert_resource(Timestamp(0.0));
 

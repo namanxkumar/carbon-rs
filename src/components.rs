@@ -66,6 +66,33 @@ pub struct LIDARBundle<T: LIDAR + Component> {
     pub point_cloud: PointCloud,
 }
 
+#[derive(Component, Default)]
+pub struct EncoderFeedback {
+    pub position: Option<f32>,
+    pub velocity: Option<f32>,
+}
+
+#[derive(Component)]
+pub struct Wheel {
+    pub radius: f32,
+}
+
+#[derive(Bundle)]
+pub struct WheelBundle {
+    pub wheel: Wheel,
+    pub encoder_feedback: EncoderFeedback,
+    pub transform: Transform,
+}
+
+#[derive(Component)]
+pub struct LeftDifferentialDrive;
+
+#[derive(Component)]
+pub struct RightDifferentialDrive;
+
+#[derive(Component)]
+pub struct CommandVelocity(pub f32);
+
 #[derive(Component)]
 pub struct Kangaroo;
 
@@ -81,33 +108,3 @@ impl PortReader for Kangaroo {
 impl MotorController for Kangaroo {
     fn send_motor_commands(&self) {}
 }
-
-#[derive(Component)]
-pub enum Motor {
-    Dynamixel,
-}
-
-#[derive(Component)]
-pub struct EncoderFeedback {
-    pub left_position: Option<f32>,
-    pub right_position: Option<f32>,
-    pub left_velocity: Option<f32>,
-    pub right_velocity: Option<f32>,
-}
-
-#[derive(Component)]
-pub struct DifferentialDriveCommand {
-    pub left_velocity: f32,
-    pub right_velocity: f32,
-}
-
-#[derive(Bundle)]
-pub struct DifferentialDriveBundle<T: MotorController + Component> {
-    pub motor_controller: T,
-    pub motor: Motor,
-    pub encoder_feedback: EncoderFeedback,
-    pub differential_drive_command: DifferentialDriveCommand,
-}
-
-//TODO!> HOW TO IMPLEMENT TRANSFORMS FOR EACH WHEEL and connect to the feedback
-//TODO!> HOW TO IMPLEMENT LINKS BETWEEN TRANSFORMS
