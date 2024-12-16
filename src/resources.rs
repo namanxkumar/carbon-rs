@@ -1,4 +1,4 @@
-use crate::primitives::{Quaternion, Vector3};
+use crate::primitives::Transform;
 use bevy_ecs::prelude::*;
 
 // RESOURCES
@@ -7,7 +7,4 @@ use bevy_ecs::prelude::*;
 pub struct Timestamp(pub f64);
 
 #[derive(Resource, Default)]
-pub struct BaseTransform {
-    pub translation: Vector3,
-    pub rotation: Quaternion,
-}
+pub struct BaseTransform(pub Transform);

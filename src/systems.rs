@@ -1,19 +1,20 @@
-use crate::components::{
-    CommandVelocity, EncoderFeedback, LeftDifferentialDrive, PointCloud, RightDifferentialDrive,
-    Transform,
+use crate::components::description::Pose;
+use crate::components::drive::{
+    CommandVelocity, EncoderFeedback, LeftDifferentialDrive, RightDifferentialDrive,
 };
+use crate::components::lidar::PointCloud;
 use crate::primitives::Point;
 use crate::traits::{MotorController, LIDAR};
 use bevy_ecs::prelude::*;
 
-pub fn read_lidar_data<T: LIDAR + Component>(mut query: Query<(&T, &Transform, &mut PointCloud)>) {
+pub fn read_lidar_data<T: LIDAR + Component>(mut query: Query<(&T, &Pose, &mut PointCloud)>) {
     // For each LIDAR entity
-    for (lidar, transform, mut point_cloud) in query.iter_mut() {
+    for (lidar, pose, mut point_cloud) in query.iter_mut() {
         if let Some(data) = lidar.read_data() {
             let points = data
                 .iter()
                 .map(|point| Point {
-                    position: transform.apply(point.position),
+                    position: pose.transform.apply(point.position),
                     intensity: point.intensity,
                 })
                 .collect();
