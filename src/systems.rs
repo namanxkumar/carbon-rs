@@ -1,3 +1,4 @@
+use crate::components::common::Port;
 use crate::components::description::Pose;
 use crate::components::drive::{
     CommandVelocity, EncoderFeedback, LeftDifferentialDrive, RightDifferentialDrive,
@@ -6,6 +7,13 @@ use crate::components::lidar::PointCloud;
 use crate::primitives::Point;
 use crate::traits::{MotorController, LIDAR};
 use bevy_ecs::prelude::*;
+
+pub fn connect_ports(query: Query<&Port>) {
+    for port in query.iter() {
+        println!("Connecting to port: {}", port.0);
+        port.connect();
+    }
+}
 
 pub fn read_lidar_data<T: LIDAR + Component>(mut query: Query<(&T, &Pose, &mut PointCloud)>) {
     // For each LIDAR entity

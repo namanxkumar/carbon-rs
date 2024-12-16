@@ -37,7 +37,7 @@ pub struct JointRelation {
 
 #[derive(Component)]
 pub struct RevoluteJoint {
-    pub relation: JointRelation,
+    relation: JointRelation,
     pub axis: Vector3,
     pub angle: f32,
 }
