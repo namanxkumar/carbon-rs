@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 bevy_ecs = "0.15.0"
+smallvec = "1.13.2"

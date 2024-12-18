@@ -196,6 +196,7 @@ name = "carbon-rs"
 version = "0.1.0"
 dependencies = [
  "bevy_ecs",
+ "smallvec",
 ]
 
 [[package]]
