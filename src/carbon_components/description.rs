@@ -1,8 +1,10 @@
-use crate::{
-    primitives::{JointCommand, Transform, Vector3},
-    traits::Joint,
-};
+use std::collections::HashMap;
+
+use crate::primitives::{Rotation, Transform, Translation};
 use bevy_ecs::prelude::*;
+
+#[derive(Component)]
+pub struct Link;
 
 #[derive(Component)]
 pub struct Dynamic;
@@ -10,11 +12,31 @@ pub struct Dynamic;
 #[derive(Component)]
 pub struct Frame;
 
-#[derive(Component, Default)]
+pub struct FrameTreeNode {
+    pub reference: Entity,
+    pub transform: Transform,
+}
+
+#[derive(Resource)]
+pub struct FrameTree(HashMap<Entity, FrameTreeNode>);
+
+#[derive(Component)]
 pub struct Pose {
     pub transform: Transform,
-    /// None means World frame
-    pub reference_frame: Option<Entity>,
+    pub reference_frame: Entity,
+}
+
+impl Pose {
+    pub fn from_translation_and_rotation(
+        translation: Translation,
+        rotation: Rotation,
+        reference_frame: Entity,
+    ) -> Self {
+        Self {
+            transform: Transform::from_translation_and_rotation(translation, rotation),
+            reference_frame: reference_frame,
+        }
+    }
 }
 
 #[derive(Bundle)]
@@ -27,32 +49,7 @@ pub struct LinkBundle {
 pub struct FrameBundle<T: Component> {
     pub marker: T,
     pub pose: Pose,
-    pub frame: Frame,
-}
-
-pub struct JointRelation {
-    pub parent: Entity,
-    pub child: Entity,
-}
-
-#[derive(Component)]
-pub struct RevoluteJoint {
-    relation: JointRelation,
-    pub axis: Vector3,
-    pub angle: f32,
-}
-
-impl Joint for RevoluteJoint {
-    fn set_joint(&mut self, parent: Entity, child: Entity) {
-        self.relation.parent = parent;
-        self.relation.child = child;
-    }
-    fn get_joint(&self) -> (Entity, Entity) {
-        (self.relation.parent, self.relation.child)
-    }
-    fn update_joint(&mut self, command: JointCommand) {
-        // Implement joint update
-    }
+    pub frame_label: Frame,
 }
 
 // ENUM for now, might replace with individual components implementing geometry trait later
@@ -75,7 +72,7 @@ pub enum Geometry {
         depth: f32,
     },
     Mesh {
-        vertices: Vec<Vector3>,
+        vertices: Vec<(f32, f32, f32)>,
         indices: Vec<u32>,
     },
 }

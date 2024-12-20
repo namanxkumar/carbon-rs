@@ -1,83 +1,84 @@
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Point {
-    pub position: Vector3,
-    pub intensity: f32,
-}
+use glam::f32 as glam_primitives;
 
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Quaternion {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-}
+#[derive(Clone, Default, Debug)]
+pub struct Translation(glam_primitives::Vec3A);
 
-impl Quaternion {
-    pub fn to_rotation_matrix(&self) -> [[f32; 3]; 3] {
-        // TODO: unsure if this is correct, its just a quick ai gen version
+impl Translation {
+    fn to_glam_vec3(&self) -> glam_primitives::Vec3 {
+        glam_primitives::Vec3::from(self.0)
+    }
 
-        let x = self.x;
-        let y = self.y;
-        let z = self.z;
-        let w = self.w;
+    pub fn zero() -> Self {
+        Self(glam_primitives::Vec3A::ZERO)
+    }
 
-        let x2 = x + x;
-        let y2 = y + y;
-        let z2 = z + z;
+    pub fn from_vector(vector: &[f32; 3]) -> Self {
+        Self(glam_primitives::Vec3A::new(vector[0], vector[1], vector[2]))
+    }
 
-        let xx = x * x2;
-        let xy = x * y2;
-        let xz = x * z2;
-        let yy = y * y2;
-        let yz = y * z2;
-        let zz = z * z2;
-        let wx = w * x2;
-        let wy = w * y2;
-        let wz = w * z2;
-
-        [
-            [1.0 - (yy + zz), xy + wz, xz - wy],
-            [xy - wz, 1.0 - (xx + zz), yz + wx],
-            [xz + wy, yz - wx, 1.0 - (xx + yy)],
-        ]
+    pub fn to_vector(&self) -> [f32; 3] {
+        [self.0.x, self.0.y, self.0.z]
     }
 }
 
-#[derive(Clone, Copy, Default, Debug)]
-pub struct Vector3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
+#[derive(Clone, Default, Debug)]
+pub struct Rotation(glam_primitives::Mat3A);
+
+impl Rotation {
+    pub fn from_quaternion(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self(glam_primitives::Mat3A::from_quat(
+            glam_primitives::Quat::from_xyzw(x, y, z, w),
+        ))
+    }
+
+    fn to_glam_quat(&self) -> glam_primitives::Quat {
+        glam_primitives::Quat::from_mat3a(&self.0)
+    }
+
+    pub fn to_quaternion(&self) -> [f32; 4] {
+        self.to_glam_quat().to_array()
+    }
+
+    pub fn identity() -> Self {
+        Self(glam_primitives::Mat3A::IDENTITY)
+    }
+
+    pub fn to_matrix(&self) -> [[f32; 3]; 3] {
+        self.0.to_cols_array_2d()
+    }
+
+    pub fn from_matrix(matrix: &[[f32; 3]; 3]) -> Self {
+        Self(glam_primitives::Mat3A::from_cols_array_2d(matrix))
+    }
 }
 
 #[derive(Default)]
-pub struct Transform {
-    pub translation: Vector3,
-    pub rotation: Quaternion,
-}
+pub struct Transform(glam_primitives::Affine3A);
 
 impl Transform {
-    pub fn apply(&self, vector: Vector3) -> Vector3 {
-        // TODO: Parallelize this operation
+    pub fn from_translation_and_rotation(translation: Translation, rotation: Rotation) -> Self {
+        Self(glam_primitives::Affine3A::from_rotation_translation(
+            rotation.to_glam_quat(),
+            translation.to_glam_vec3(),
+        ))
+    }
 
-        // Apply rotation
-        let rotation_matrix = self.rotation.to_rotation_matrix();
-        let x = vector.x * rotation_matrix[0][0]
-            + vector.y * rotation_matrix[1][0]
-            + vector.z * rotation_matrix[2][0];
-        let y = vector.x * rotation_matrix[0][1]
-            + vector.y * rotation_matrix[1][1]
-            + vector.z * rotation_matrix[2][1];
-        let z = vector.x * rotation_matrix[0][2]
-            + vector.y * rotation_matrix[1][2]
-            + vector.z * rotation_matrix[2][2];
+    pub fn identity() -> Self {
+        Self(glam_primitives::Affine3A::IDENTITY)
+    }
 
-        // Apply translation
-        Vector3 {
-            x: x + self.translation.x,
-            y: y + self.translation.y,
-            z: z + self.translation.z,
-        }
+    pub fn to_matrix(&self) -> [[f32; 4]; 4] {
+        glam_primitives::Mat4::from(self.0).to_cols_array_2d()
+    }
+
+    pub fn from_matrix(matrix: &[[f32; 4]; 4]) -> Self {
+        Self(glam_primitives::Affine3A::from_mat4(
+            glam_primitives::Mat4::from_cols_array_2d(matrix),
+        ))
+    }
+
+    pub fn apply(&self, other: Transform) -> Transform {
+        Self(self.0 * other.0)
     }
 }
 
@@ -86,15 +87,3 @@ pub struct JointCommand {
     pub velocity: Option<f32>,
     pub effort: Option<f32>,
 }
-
-// impl Add for Vector3 {
-//     type Output = Self;
-
-//     fn add(self, other: Self) -> Self {
-//         Self {
-//             x: self.x + other.x,
-//             y: self.y + other.y,
-//             z: self.z + other.z,
-//         }
-//     }
-// }
